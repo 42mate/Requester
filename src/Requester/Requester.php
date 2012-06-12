@@ -103,10 +103,11 @@ class Requester {
    *
    * @param String $storePath : Full path to store the file
    * @param String $url       : The url to hit
+   * @param String $method    : An HTTP Method, by default GET
    * @return boolean          : True on success False on fail
    */
-  public function save($storePath, $url = null) {
-    $fileContent = $this->execute($url);
+  public function save($storePath, $url = '', $method = 'GET') {
+    $fileContent = $this->execute($url, $method);
     $fp = fopen($storePath,'w');
     if ($fp !== false) {
       $writeStatus = fwrite($fp, $fileContent);

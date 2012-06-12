@@ -108,10 +108,17 @@ To get a remote file and save it locally you can do the following.
 
 ``` php
 $requester = new Requester();
-$requester->save('http://www.someserver.com/somefile', 'GET');
+$requester->save($pathToStore, 'http://www.someserver.com/somefile');
 ```
 
-This save any request into a file.
+This save any request into a file. By default the file is fetched with GET, but
+I know that sometimes we made mistakes and if some crazy head decide that
+needs to use a diffrent method to fetch a file you can set the Method.
+
+``` php
+$requester = new Requester();
+$requester->save($pathToStore, 'http://www.someserver.com/somefile','PUT'); //WAT!
+```
 
 IMPORTANT : The BAD usage of this feature can create security problems, please
 keep that in mind and be careful.
