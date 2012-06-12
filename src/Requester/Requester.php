@@ -211,6 +211,23 @@ class Requester {
   }
 
   /**
+   * Sets the Certificate in order to Validate the Peer
+   *
+   * @param String $ssl_ca : Path to the CA Cert
+   * @return Requester
+   */
+  public function setOptionSsl($ssl_ca) {
+    $this->options[CURLOPT_SSL_VERIFYPEER] = false;
+    if ($ssl_ca !== '') {
+      $this->options[CURLOPT_SSL_VERIFYPEER] = true;
+      $this->options[CURLOPT_SSL_VERIFYHOST] =  2;
+      $this->options[CURLOPT_CAINFO] = $ssl_ca;
+
+    }
+    return $this;
+  }
+
+  /**
    * Resets Requester Options
    */
   public function resetOptions() {

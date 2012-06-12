@@ -87,11 +87,20 @@ $proxy => array(
 $requester->setOptionProxy($proxy);
 $response = $requester->execute('http://www.httpbin.org/get', 'GET');
 ```
+Requester supports NTLM authentication for people that is behind a ISA Server.
 
 ## HTTPS support
 
-At the moment Requester is skiping the SSL verification, but works with
-HTTPS Requests with out peer verfication.
+By default Requester will support HTTPS but without Peer Validation.
+
+In order to validate the Peer you need to set the Certificate path to make
+the validation.
+
+``` php
+$request = new Requester();
+$request->setOptionSsl(dirname(__FILE__) . '/resources/ca/google2.pem');
+$response = $request->execute('https://www.google.com.ar');
+```
 
 ## Save Remote Files Locally
 

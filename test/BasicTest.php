@@ -75,5 +75,11 @@ class BasicTest extends PHPUnit_Framework_TestCase
     $this->assertEquals(false, $request->ping('zarlanga.com'), 'Should fail');
   }
 
+  public function testHttps() {
+    $request = new Requester();
+    $request->setOptionSsl(dirname(__FILE__) . '/resources/ca/google2.pem');
+    $this->assertTrue($request->ping('https://www.google.com.ar'), 'Fail pingin Google with HTTPS');
+  }
+
 }
 
