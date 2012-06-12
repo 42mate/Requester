@@ -87,7 +87,7 @@ $proxy => array(
 $requester->setOptionProxy($proxy);
 $response = $requester->execute('http://www.httpbin.org/get', 'GET');
 ```
-Requester supports NTLM authentication for people that is behind a ISA Server.
+Requester supports NTLM authentication for people that is behind an ISA Server.
 
 ## HTTPS support
 
