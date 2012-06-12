@@ -1,7 +1,7 @@
 Requester
 =========
 
- Requester is an API to make HTTP requests using Curl. Is a alternative version
+ Requester is an API to make HTTP requests using Curl. Is an alternative version
 of PHRequest but was ideally thinking to use in PHP 5.2 projects and be a stand
 alone class.
 
