@@ -36,7 +36,7 @@ In order to make a GET Request you should do this
 
 ``` php
 $requester = new Requester();
-$response = $requester->execute('http://www.google.com');
+$response = $requester->execute('GET', 'http://www.google.com');
 ```
 
 Yes, only that. Looks nice, take a look to a POST Request.
@@ -44,14 +44,15 @@ Yes, only that. Looks nice, take a look to a POST Request.
 To make a POST you can do this
 
 ``` php
+
+$requester = new Requester();
+
 $params = array (
   'param1' => 'Some Value',
   'param2' => 'Some other value',
 );
 
-$requester = new Requester();
-$requester->setOptionData($params);
-$response = $requester->execute('http://www.httpbin.org/post', 'POST');
+$response = $requester->execute('POST', 'http://www.httpbin.org/post', $params);
 ```
 
 and that's all folks!
@@ -72,7 +73,7 @@ $proxy => array(
  'url' => 'http://prx_name_or_ip:3128'
 );
 $requester->setOptionProxy($proxy);
-$response = $requester->execute('http://www.httpbin.org/get', 'GET');
+$response = $requester->execute('GET', 'http://www.httpbin.org/get');
 ```
 
 If your proxy uses auth, try with this
@@ -85,7 +86,7 @@ $proxy => array(
   'auth_method' => 'BASIC' //Optional, BASIC By default, NTLM is the second option.
 );
 $requester->setOptionProxy($proxy);
-$response = $requester->execute('http://www.httpbin.org/get', 'GET');
+$response = $requester->execute('GET', 'http://www.httpbin.org/get');
 ```
 Requester supports NTLM authentication for people that is behind an ISA Server.
 
@@ -99,7 +100,7 @@ the validation.
 ``` php
 $request = new Requester();
 $request->setOptionSsl(dirname(__FILE__) . '/resources/ca/google2.pem');
-$response = $request->execute('https://www.google.com.ar');
+$response = $request->execute('GET', 'https://www.google.com.ar');
 ```
 
 ## Save Remote Files Locally
@@ -117,11 +118,42 @@ needs to use a diffrent method to fetch a file you can set the Method.
 
 ``` php
 $requester = new Requester();
-$requester->save($pathToStore, 'http://www.someserver.com/somefile','PUT'); //WAT!
+
+$data = array(...); //Array or String with data to include in the payload of the request, optional
+$params = array(...); //Array or String with url encoded data to put as query string, optional
+
+$requester->save($pathToStore, 'http://www.someserver.com/somefile', $data, $params, 'PUT'); //WAT!, yes, just in case
 ```
 
 IMPORTANT : The BAD usage of this feature can create security problems, please
 keep that in mind and be careful.
+
+##Making several Requests
+
+One of the main target of Requester is keep the context of the configuration in
+order to make several request with only one setup.
+
+``` php
+
+$requester = new Requester(array(
+    'timeout' => 40,
+    'proxy' => array(
+        'url' => 'http://uglyproxy.corp.com'
+    )
+));
+
+$response = $requester->execute('GET', 'http://www.google.com');
+
+//do something with the response
+
+$response = $requester->execute('GET', 'http://www.google.com?q=php');
+
+//do something with the response again, this is the same as abobe
+
+$response = $requester->execute('GET', 'http://www.google.com?q=php', null, array('q' => 'php'));
+```
+
+All this request will be executed with the same parameters for proxy and timeout.
 
 ## Supported methods.
 

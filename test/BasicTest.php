@@ -5,50 +5,42 @@ class BasicTest extends PHPUnit_Framework_TestCase
 {
   public function testSimpleGet() {
     $request = new Requester();
-    $response = json_decode($request->execute(BASE_URL . '/get?id=test', 'GET'));
+    $response = json_decode($request->execute('GET', BASE_URL . '/get?id=test'));
+    $this->assertNotEquals(false, $response, 'Result is false');
+    $this->assertEquals('test', $response->args->id);
+    $response = json_decode($request->execute('GET', BASE_URL . '/get', null, array('id' => 'test')));
     $this->assertNotEquals(false, $response, 'Result is false');
     $this->assertEquals('test', $response->args->id);
   }
 
   public function testSimplePost() {
     $request = new Requester();
-    $request->setOptionData('arg1=test&arg2=2');
-    $response = json_decode($request->execute(BASE_URL . '/post', 'POST'));
+    $response = json_decode($request->execute('POST', BASE_URL . '/post', 'arg1=test&arg2=2'));
     $this->assertNotEquals(false, $response, 'Result is false');
     $this->assertEquals('test', $response->form->arg1);
 
     //Array Params Test
-    $request->setOptionData(array('arg1' => 'test', 'arg2' => 2));
-    $response = json_decode($request->execute(BASE_URL . '/post', 'POST'));
+    $response = json_decode($request->execute('POST', BASE_URL . '/post', array('arg1' => 'test', 'arg2' => 2)));
     $this->assertNotEquals(false, $response, 'Result is false');
     $this->assertEquals('test', $response->form->arg1);
   }
 
   public function testSimplePut() {
     $request = new Requester();
-    $request->setOptionData('arg1=test&arg2=2');
-    $response = json_decode($request->execute(BASE_URL . '/put', 'PUT'));
+    $response = json_decode($request->execute('PUT', BASE_URL . '/put', 'arg1=test&arg2=2'));
     $this->assertNotEquals(false, $response, 'Result is false');
     $this->assertEquals('test', $response->form->arg1);
 
     //Array Params Test
-    $request->setOptionData(array('arg1' => 'test', 'arg2' => 2));
-    $response = json_decode($request->execute(BASE_URL . '/put', 'PUT'));
+    $response = json_decode($request->execute('PUT', BASE_URL . '/put', array('arg1' => 'test', 'arg2' => 2) ));
     $this->assertNotEquals(false, $response, 'Result is false');
     $this->assertEquals('test', $response->form->arg1);
   }
 
   public function testSimpleDelete() {
     $request = new Requester();
-    $request->setOptionData('arg1=test&arg2=2');
-    $response = json_decode($request->execute(BASE_URL . '/delete?id=1', 'DELETE'));
-    $this->assertNotEquals(false, $response, 'Result is false');
-    $this->assertEquals('1', $response->args->id);
-    $this->assertEquals('arg1=test&arg2=2', $response->data);
-
-    //Array Params Test
-    $request->setOptionData(array('arg1' => 'test', 'arg2' => 2));
-    $response = json_decode($request->execute(BASE_URL . '/delete?id=1', 'DELETE'));
+    $response = json_decode($request->execute('DELETE', BASE_URL . '/delete',
+            array('arg1' => 'test', 'arg2' => 2), 'id=1'));
     $this->assertNotEquals(false, $response, 'Result is false');
     $this->assertEquals('1', $response->args->id);
     $this->assertEquals('arg1=test&arg2=2', $response->data);
@@ -56,7 +48,7 @@ class BasicTest extends PHPUnit_Framework_TestCase
 
   public function testSimpleHead() {
     $request = new Requester();
-    $response = $request->execute(BASE_URL . '/get?id=test', 'HEAD');
+    $response = $request->execute('HEAD', BASE_URL . '/get?id=test');
     $isOk = (strpos($response, 'HTTP/1.1 200 OK') === false)?false:true;
     $this->assertNotEquals(false, $isOk, 'Result is false');
   }

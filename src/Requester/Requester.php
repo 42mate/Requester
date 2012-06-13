@@ -7,8 +7,17 @@
  */
 class Requester {
 
-  protected $url = '';
-  protected $method = 'GET';
+  const AUTH_BASIC = CURLAUTH_BASIC;
+  const AUTH_NTLM = CURLAUTH_NTLM;
+  const AUTH_DIGEST = CURLAUTH_DIGEST;
+  const AUTH_GSS = CURLAUTH_GSSNEGOTIATE;
+  const PROXY_AUTH_NTLM = 'NTLM';
+  const PROXY_AUTH_BASIC = 'BASIC';
+  const POST = 'POST';
+  const GET = 'GET';
+  const HEAD = 'HEAD';
+  const DELETE = 'DELETE';
+  const PUT = 'PUT';
 
   static protected $default_options =  array(
       CURLOPT_FRESH_CONNECT => TRUE,
@@ -19,75 +28,36 @@ class Requester {
       CURLOPT_MAXREDIRS => 3,
   );
 
+  protected $url = '';
+  protected $method = self::GET;
   protected $options = array();
 
   /**
    * Creates a Request Object
    *
-   * @param String $method  A valid HTTP Method
-   * @param String $url     A valid Url
-   * @param Array  $options Posible entries
-   *   params       : Array of parameters to by added as Query String to the Url
-   *   data         : Array of data to include in the body of the request
-   *   timeout      : Time in seconds to wait for the request, Default 30
-   *   allow_redirects: True or false Default True
-   *   max_redirects: Numeric, default 3
-   *   proxy        : Array (url, auth, auth_method). Default None
-   *   encoding     : String, The encoding type to pass to curl, Default ''
+   * @param $options
+   *
+   * @see resetOptions for more detail of the options
    */
-  public function __construct($url = '', $options = array()) {
-    $this->url = $url;
-    $this->options = self::$default_options;
-
-    if (isset($options['params']) && is_array($options['params'])) {
-      $this->params = http_build_query($options['params']);
-      $this->url .= '?' . $this->params;
-    }
-    $this->setOptionUrl($this->url);
-
-    $data = '';
-    if (isset($options['data']) && is_array($options['data'])) {
-      $data = $options['data'];
-    }
-    $this->setOptionData($data);
-
-    $timeOut = 30;
-    if (isset($options['timeout']) && is_numeric($options['timeout'])) {
-      $timeOut = $options['timeout'];
-    }
-    $this->setOptionTimeOut($timeOut);
-
-    $max_redirects = 3;
-    if (isset($options['max_redirects']) && is_numeric($options['max_redirects'])) {
-      $max_redirects = (int) $options['max_redirects'];
-    }
-
-    if (isset($options['allow_redirects'])) {
-      $this->setOptionAllowRedirect($max_redirects);
-    }
-
-    $proxy = FALSE;
-    if (isset($options['proxy']) && is_array($options['proxy'])) {
-      $proxy = $options['proxy'];
-    }
-
-    $this->setOptionProxy($proxy);
+  public function __construct($options = array()) {
+    $this->resetOptions($options);
   }
 
   /**
    * Executes the Request
    *
-   * @param String $url     : The url to hit, is optional, by def takes the internal url
    * @param String $method  : The HTTP method to use, by default use the internal Method.
+   * @param String $url     : The url to hit
+   * @param Array  $data    : The Data to append in the body
+   * @param Array  $params  : The Parameters to append as a Query String
+   *
    * @return String|Boolean : The content or false on failure
    */
-  public function execute($url = null, $method = null) {
-    if ($url !== null) {
-      $this->setOptionUrl($url);
-    }
-    if ($method !== null) {
-      $this->setOptionMethod($method);
-    }
+  public function execute($method, $url, $data = null, $params = null) {
+    $this->setOptionUrl($url);
+    $this->setOptionMethod($method);
+    $this->setOptionData($data);
+    $this->setOptionParams($params);
     $ch = curl_init();
     curl_setopt_array($ch, $this->options);
     $result = curl_exec($ch);
@@ -103,11 +73,13 @@ class Requester {
    *
    * @param String $storePath : Full path to store the file
    * @param String $url       : The url to hit
+   * @param Array  $data      : The Data to append in the body
+   * @param Array  $params    : The Parameters to append as a Query String
    * @param String $method    : An HTTP Method, by default GET
    * @return boolean          : True on success False on fail
    */
-  public function save($storePath, $url = '', $method = 'GET') {
-    $fileContent = $this->execute($url, $method);
+  public function save($storePath, $url, $data = null, $params = null, $method = self::GET) {
+    $fileContent = $this->execute($method, $url, $data, $params);
     $fp = fopen($storePath,'w');
     if ($fp !== false) {
       $writeStatus = fwrite($fp, $fileContent);
@@ -126,50 +98,42 @@ class Requester {
    * @return boolean : True on Success False on Fail
    */
   public function ping($url) {
-     if ($this->execute($url, 'HEAD') !== false) {
+     if ($this->execute(self::HEAD, $url) !== false) {
        return true;
      }
      return false;
   }
 
   /**
-   * Sets the Url to Hit
-   * @param String     : $url
+   * Converts an array to a query string
+   *
+   * @param Array $params
+   *
+   * @return String
+   */
+  public function buildQuery($params) {
+    if(is_array($params)) {
+      return http_build_query($params);
+    }
+    return $params;
+  }
+
+  /**
+   * Sets the Proxy Parameters
+   *
+   * @param Array $proxy : Array with Configurations
+   *      array('url',       //Proxy Url
+   *            'auth',      //Proxy Auth credentials User:Pass, Optional
+   *            'auth_method'//Proxy Auth Method, BASIC / NTLM, Basic By Def
+   *      )
    * @return Requester
    */
-  public function setOptionUrl($url) {
-    $this->options[CURLOPT_URL] = $url;
-    return $this;
-  }
-
-  public function setOptionMethod($method = null) {
-    $this->options[CURLOPT_HEADER] = FALSE;
-    if ($method !== null) {
-      $this->method = $method;
-    }
-    switch ($this->method) {
-      case 'GET':
-        $this->options[CURLOPT_POST] = FALSE;
-        break;
-      case 'POST':
-        $this->options[CURLOPT_POST] = TRUE;
-        break;
-      case 'HEAD':
-        $this->options[CURLOPT_HEADER] = TRUE;
-        $this->options[CURLOPT_NOBODY] = TRUE;
-        break;
-      default:
-        $this->options[CURLOPT_CUSTOMREQUEST] = $this->method;
-    }
-    return $this;
-  }
-
-  public function setOptionProxy($proxy) {
-    if ($proxy !== FALSE) {
+  public function setOptionProxy($proxy = false) {
+    if ($proxy !== false) {
       $this->options[CURLOPT_PROXY] = $proxy['url'];
       if (isset($proxy['auth'])) {
         $this->options[CURLOPT_PROXYAUTH] = CURLAUTH_BASIC;
-        if (isset($proxy['auth_method']) && $proxy['auth_method'] === 'NTLM') {
+        if (isset($proxy['auth_method']) && $proxy['auth_method'] === self::PROXY_AUTH_NTLM) {
           $this->options[CURLOPT_PROXYAUTH] = CURLAUTH_NTLM;
         }
         $this->options[CURLOPT_PROXYUSERPWD] = $proxy['auth'];
@@ -178,7 +142,13 @@ class Requester {
     return $this;
   }
 
-  public function setOptionTimeOut($timeOut) {
+  /**
+   * Sets the Timeout of the Request
+   *
+   * @param Integer $timeOut, by default 30
+   * @return Requester
+   */
+  public function setOptionTimeOut($timeOut = 30) {
     $this->options[CURLOPT_TIMEOUT] = 30;
     if (isset($timeOut)) {
       $this->options[CURLOPT_TIMEOUT] = $timeOut;
@@ -187,19 +157,12 @@ class Requester {
   }
 
   /**
-   * Sets Payload for POST requests
+   * Sets how many redirets will support
    *
-   * @param Mixed (Array or String) $data
+   * @param Integer $max_redirects, By default 3
+   *
    * @return Requester
    */
-  public function setOptionData($data) {
-    if (is_array($data)) {
-      $data = http_build_query($data);
-    }
-    $this->options[CURLOPT_POSTFIELDS] = $data;
-    return $this;
-  }
-
   public function setOptionAllowRedirect($max_redirects = 3) {
     if($max_redirects == false || $max_redirects == 0) {
       $this->options[CURLOPT_FOLLOWLOCATION] = false;
@@ -214,27 +177,156 @@ class Requester {
   /**
    * Sets the Certificate in order to Validate the Peer
    *
-   * @param String $ssl_ca : Path to the CA Cert
+   * @param String $sslCa : Path to the CA Cert
+   *
    * @return Requester
    */
-  public function setOptionSsl($ssl_ca) {
+  public function setOptionSsl($sslCa) {
     $this->options[CURLOPT_SSL_VERIFYPEER] = false;
-    if ($ssl_ca !== '') {
+    if ($sslCa !== '') {
       $this->options[CURLOPT_SSL_VERIFYPEER] = true;
       $this->options[CURLOPT_SSL_VERIFYHOST] =  2;
-      $this->options[CURLOPT_CAINFO] = $ssl_ca;
+      $this->options[CURLOPT_CAINFO] = $sslCa;
 
     }
     return $this;
   }
 
   /**
-   * Resets Requester Options
+   * Sets auth for the Requests
+   *
+   * @param String $usernameAndPassword : username:password
+   * @param String $method              : Any Curl Option valid for CURLOPT_HTTPAUTH, by def BASIC.
+   *
+   * @todo Test this method
    */
-  public function resetOptions() {
+  public function setOptionHttpAuth($usernameAndPassword, $method = self::AUTH_BASIC) {
+    $this->options[CURLOPT_HTTPAUTH] = $method;
+    $this->options[CURLOPT_USERPWD] = $usernameAndPassword;
+  }
+
+  /**
+   * Sets the Encoding
+   *
+   * @param String $encodig : "identity", "deflate", and "gzip"
+   *
+   * @return Requester
+   *
+   * @todo Test this Method
+   */
+  protected function setOptionEncoding($encoding = '') {
+    $this->options[CURLOPT_ENCODING] = $encoding;
+    return $this;
+  }
+
+    /**
+   * Sets the Url to Hit
+   * @param String     : $url
+   * @return Requester
+   */
+  protected function setOptionUrl($url) {
+    $this->url = $url;
+    $this->options[CURLOPT_URL] = $url;
+    return $this;
+  }
+
+  /**
+   * Sets params and Appends to the Url as Query string
+   *
+   * @param Array $params
+   *
+   * @return Requester
+   */
+  protected function setOptionParams($params) {
+    if(!empty($params)) {
+      $this->params = $this->buildQuery($params);
+      $this->url .= '?' . $this->params;
+      $this->setOptionUrl($this->url);
+    }
+    return $this;
+  }
+
+  /**
+   * Sets Payload for POST requests
+   *
+   * @param Mixed (Array or String) $data
+   * @return Requester
+   */
+  protected function setOptionData($data) {
+    if (!empty($data)) {
+      if (is_array($data)) {
+        $data = $this->buildQuery($data);
+      }
+      $this->options[CURLOPT_POSTFIELDS] = $data;
+    }
+    return $this;
+  }
+
+  /**
+   * Sets the Request HTTP Method
+   *
+   * @param String $method : The Method, by default GET
+   *
+   * @return Requester
+   */
+  protected function setOptionMethod($method = self::GET) {
+    $this->options[CURLOPT_HEADER] = FALSE;
+    $this->method = $method;
+    switch ($this->method) {
+      case self::GET:
+        $this->options[CURLOPT_POST] = FALSE;
+        break;
+      case self::POST:
+        $this->options[CURLOPT_POST] = TRUE;
+        break;
+      case self::HEAD:
+        $this->options[CURLOPT_HEADER] = TRUE;
+        $this->options[CURLOPT_NOBODY] = TRUE;
+        break;
+      default:
+        $this->options[CURLOPT_CUSTOMREQUEST] = $this->method;
+    }
+    return $this;
+  }
+
+  /**
+   * Resets Requester Options
+   *
+   * @param Array  $options Posible entries
+   *   timeout        : Time in seconds to wait for the request, Default 30
+   *   max_redirects  : Numeric, default 3, 0 for don't allow redirects
+   *   proxy          : Array (url, auth, auth_method). Default None
+   *   encoding       : String, The encoding type to pass to curl, Default ''
+   *   ssl_ca         : Sets the Path to the CA for SSL
+   *
+   * @todo Test this method
+   */
+  public function resetOptions($options = array()) {
     $this->options = self::$default_options;
-    $this->method = 'GET';
-    $this->url = '';
+
+    if (isset($options['timeout']) && is_numeric($options['timeout'])) {
+      $this->setOptionTimeOut($options['timeout']);
+    }
+
+    if (isset($options['max_redirects']) && is_numeric($options['max_redirects'])) {
+      $this->setOptionAllowRedirect((int) $options['max_redirects']);
+    }
+
+    if (isset($options['proxy']) && is_array($options['proxy'])) {
+      $proxy = $options['proxy'];
+    }
+
+    if(isset($options['ssl_ca'])) {
+      $this->setOptionSsl($options['ssl_ca']);
+    }
+
+    if(isset($options['proxy'])) {
+      $this->setOptionProxy($options['proxy']);
+    }
+
+    if (isset($options['encoding'])) {
+      $this->setOptionEncoding($options['encoding']);
+    }
   }
 
 }
