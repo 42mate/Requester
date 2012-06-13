@@ -7,17 +7,17 @@
  */
 class Requester {
 
-  const AUTH_BASIC = CURLAUTH_BASIC;
-  const AUTH_NTLM = CURLAUTH_NTLM;
-  const AUTH_DIGEST = CURLAUTH_DIGEST;
-  const AUTH_GSS = CURLAUTH_GSSNEGOTIATE;
-  const PROXY_AUTH_NTLM = 'NTLM';
+  const POST             = 'POST';
+  const GET              = 'GET';
+  const HEAD             = 'HEAD';
+  const DELETE           = 'DELETE';
+  const PUT              = 'PUT';
+  const PROXY_AUTH_NTLM  = 'NTLM';
   const PROXY_AUTH_BASIC = 'BASIC';
-  const POST = 'POST';
-  const GET = 'GET';
-  const HEAD = 'HEAD';
-  const DELETE = 'DELETE';
-  const PUT = 'PUT';
+  const AUTH_BASIC       = CURLAUTH_BASIC;
+  const AUTH_NTLM        = CURLAUTH_NTLM;
+  const AUTH_DIGEST      = CURLAUTH_DIGEST;
+  const AUTH_GSS         = CURLAUTH_GSSNEGOTIATE;
 
   static protected $default_options =  array(
       CURLOPT_FRESH_CONNECT => TRUE,
