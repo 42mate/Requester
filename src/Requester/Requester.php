@@ -18,6 +18,8 @@ class Requester {
   const AUTH_NTLM        = CURLAUTH_NTLM;
   const AUTH_DIGEST      = CURLAUTH_DIGEST;
   const AUTH_GSS         = CURLAUTH_GSSNEGOTIATE;
+  const RESPONSE_RAW     = 'raw';
+  const RESPONSE_ARRAY   = 'array';
 
   static protected $default_options =  array(
       CURLOPT_FRESH_CONNECT => TRUE,
@@ -31,6 +33,8 @@ class Requester {
   protected $url = '';
   protected $method = self::GET;
   protected $options = array();
+  
+  protected $responseType = self::RESPONSE_RAW;
 
   /**
    * Creates a Request Object
@@ -62,10 +66,33 @@ class Requester {
     curl_setopt_array($ch, $this->options);
     $result = curl_exec($ch);
     if (curl_errno($ch) > 0) {
-      $result = false;
+      throw new Exception(curl_error($ch), curl_errno($ch));
+    }
+    if ($this->responseType === self::RESPONSE_ARRAY) {
+      $result = self::createArrayResponse($result, curl_getinfo($ch));
     }
     curl_close($ch);
     return $result;
+  }
+  
+  public function get($url, $params = null) {
+    return $this->execute(self::GET, $url, null, $params);
+  }
+  
+  public function post($url, $data = null, $params = null) {
+    return $this->execute(self::POST, $url, $data , $params);    
+  }
+  
+  public function put($url, $data = null, $params = null) {
+    return $this->execute(self::PUT, $url, $data , $params);    
+  }
+  
+  public function delete($url, $data = null, $params = null) {
+    return $this->execute(self::DELETE, $url, $data , $params);    
+  }
+  
+  public function head($url, $data = null, $params = null) {
+    return $this->execute(self::HEAD, $url, $data , $params);    
   }
 
   /**
@@ -288,6 +315,14 @@ class Requester {
     }
     return $this;
   }
+  
+  public function setOptionResponseType($type = self::RESPONSE_RAW) {
+    $this->responseType = $type;
+    $this->options[CURLOPT_HEADER] = false;
+    if(isset($options['response_type']) && $options['response_type'] === self::RESPONSE_ARRAY) {
+     $this->options[CURLOPT_HEADER] = true;
+    }
+  }
 
   /**
    * Resets Requester Options
@@ -298,6 +333,8 @@ class Requester {
    *   proxy          : Array (url, auth, auth_method). Default None
    *   encoding       : String, The encoding type to pass to curl, Default ''
    *   ssl_ca         : Sets the Path to the CA for SSL
+   *   response_type  : RESPONSE_RAW or RESPONSE_ARRAY
+   *                    Sets the response type, the raw response or an array with details.
    *
    * @todo Test this method
    */
@@ -326,6 +363,54 @@ class Requester {
 
     if (isset($options['encoding'])) {
       $this->setOptionEncoding($options['encoding']);
+    }
+    
+    $this->setOptionResponseType(self::RESPONSE_RAW);
+    if(isset($options['response_type']) && $options['response_type'] === self::RESPONSE_ARRAY) {
+      $this->setOptionResponseType(self::RESPONSE_ARRAY);
+    }
+  }
+  
+  /**
+   * Parses a raw HTTP Response Header and convert it to an array.
+   * @param String $headers
+   * @return Array : The Parsed Headers 
+   */
+  static function parseHttpHeader($headers) {
+    $headerdata = array();
+    if ($headers === false){
+      return $headerdata;
+    }
+    $headers_lines = str_replace("\r","", $headers);
+    $headers_lines = explode("\n", $headers_lines);
+    foreach($headers_lines as $value){
+      $header = explode(": ", $value);
+      if(count($header) == 1){
+        $headerdata['status'] = $header[0];
+      } elseif(count($header) == 2){
+        $headerdata[$header[0]] = $header[1];
+      }
+    }
+    return $headerdata;
+  }
+  
+  /**
+   * Creates a Response Array 
+   * 
+   * @param String $content  : Raw Response (Headers and Body)
+   * @param Array $info : Curl Meta Info    
+   */
+  static function createArrayResponse($content, $info = array()) {
+    $response = array();
+    foreach($info as $key => $value) {
+      $response[$key] = $value;
+    }
+    $response['raw_header'] = trim(substr($content, 0, $info['header_size']));
+    $response['headers'] = self::parseHttpHeader($response['raw_header']);
+    $response['content'] = substr($content, -$info['download_content_length']); 
+    $response['allow'] = array();
+    if (isset($response['headers']['Allow'])) {
+      $response['allow'] = explode(', ', $response['headers']['Allow']);
     }
   }
 
