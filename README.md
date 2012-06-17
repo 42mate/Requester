@@ -36,7 +36,7 @@ In order to make a GET Request you should do this
 
 ``` php
 $requester = new Requester();
-$response = $requester->execute('GET', 'http://www.google.com');
+$response = $requester->get('http://www.google.com');
 ```
 
 Yes, only that. Looks nice, take a look to a POST Request.
@@ -52,7 +52,7 @@ $params = array (
   'param2' => 'Some other value',
 );
 
-$response = $requester->execute('POST', 'http://www.httpbin.org/post', $params);
+$response = $requester->post('http://www.httpbin.org/post', $params);
 ```
 
 and that's all folks!
@@ -73,7 +73,7 @@ $proxy => array(
  'url' => 'http://prx_name_or_ip:3128'
 );
 $requester->setOptionProxy($proxy);
-$response = $requester->execute('GET', 'http://www.httpbin.org/get');
+$response = $requester->get('http://www.httpbin.org/get');
 ```
 
 If your proxy uses auth, try with this
@@ -86,7 +86,7 @@ $proxy => array(
   'auth_method' => 'BASIC' //Optional, BASIC By default, NTLM is the second option.
 );
 $requester->setOptionProxy($proxy);
-$response = $requester->execute('GET', 'http://www.httpbin.org/get');
+$response = $requester->get('http://www.httpbin.org/get');
 ```
 Requester supports NTLM authentication for people that is behind an ISA Server.
 
@@ -100,7 +100,7 @@ the validation.
 ``` php
 $request = new Requester();
 $request->setOptionSsl(dirname(__FILE__) . '/resources/ca/google2.pem');
-$response = $request->execute('GET', 'https://www.google.com.ar');
+$response = $request->get('https://www.google.com.ar');
 ```
 
 ## Save Remote Files Locally
@@ -142,15 +142,15 @@ $requester = new Requester(array(
     )
 ));
 
-$response = $requester->execute('GET', 'http://www.google.com');
+$response = $requester->get('http://www.google.com');
 
 //do something with the response
 
-$response = $requester->execute('GET', 'http://www.google.com?q=php');
+$response = $requester->get('http://www.google.com?q=php');
 
 //do something with the response again, this is the same as abobe
 
-$response = $requester->execute('GET', 'http://www.google.com?q=php', null, array('q' => 'php'));
+$response = $requester->get('http://www.google.com', array('q' => 'php'));
 ```
 
 All this request will be executed with the same parameters for proxy and timeout.

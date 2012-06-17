@@ -318,9 +318,10 @@ class Requester {
   
   public function setOptionResponseType($type = self::RESPONSE_RAW) {
     $this->responseType = $type;
-    $this->options[CURLOPT_HEADER] = false;
-    if(isset($options['response_type']) && $options['response_type'] === self::RESPONSE_ARRAY) {
-     $this->options[CURLOPT_HEADER] = true;
+    if($type === self::RESPONSE_ARRAY) {
+      $this->options[CURLOPT_HEADER] = true;
+    } else {
+      $this->options[CURLOPT_HEADER] = false;
     }
   }
 
