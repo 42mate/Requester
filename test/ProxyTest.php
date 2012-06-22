@@ -18,11 +18,11 @@ class ProxyTest extends PHPUnit_Framework_TestCase
   }
 
   public function testGet() {
-    $response = $this->requester->execute(BASE_URL . '/get?id=test', 'HEAD');
+    $response = $this->requester->head(BASE_URL . '/get?id=test');
     $isOk = (strpos($response, 'HTTP/1.1 200 OK') === false)?false:true;
     $this->assertNotEquals(false, $isOk, 'Result is false');
 
-    $response = $this->requester->execute('https://httpbin.org/', 'HEAD');
+    $response = $this->requester->head('https://httpbin.org/');
     $isOk = (strpos($response, 'HTTP/1.1 200 OK') === false)?false:true;
     $this->assertNotEquals(false, $isOk, 'Result is false');
   }

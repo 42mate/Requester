@@ -8,8 +8,8 @@ $proxy = array(
 );
 
 $proxy_ntlm = array(
-    'url' => 'http://proxy.corp.something:8080',
-    'auth' => 'some_user:somepass',
+    'url' => 'http://proxy.inet.corp.nyse.com:8080',
+    'auth' => 'acasiva:maron357Fo',
     'auth_method' => 'NTLM',
 );
 
