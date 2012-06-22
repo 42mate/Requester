@@ -25,16 +25,15 @@ class Requester {
       CURLOPT_FRESH_CONNECT => TRUE,
       CURLOPT_RETURNTRANSFER => TRUE,
       CURLINFO_HEADER_OUT => TRUE,
-      CURLOPT_SSL_VERIFYPEER => false,
-      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_SSL_VERIFYPEER => FALSE,
+      CURLOPT_FOLLOWLOCATION => TRUE,
       CURLOPT_MAXREDIRS => 3,
   );
 
   protected $url = '';
   protected $method = self::GET;
-  protected $options = array();
-  
   protected $responseType = self::RESPONSE_RAW;
+  protected $options = array();
 
   /**
    * Creates a Request Object
@@ -65,34 +64,42 @@ class Requester {
     $ch = curl_init();
     curl_setopt_array($ch, $this->options);
     $result = curl_exec($ch);
+    $info = curl_getinfo($ch);
+
     if (curl_errno($ch) > 0) {
       throw new Exception(curl_error($ch), curl_errno($ch));
     }
-    if ($this->responseType === self::RESPONSE_ARRAY) {
-      $result = self::createArrayResponse($result, curl_getinfo($ch));
+
+    if ($info['http_code'] >= 400) {
+      throw new Exception('Response Code: ' . $info['http_code']);
     }
+
+    if ($this->responseType === self::RESPONSE_ARRAY) {
+      $result = self::createArrayResponse($result, $info);
+    }
+
     curl_close($ch);
     return $result;
   }
-  
+
   public function get($url, $params = null) {
     return $this->execute(self::GET, $url, null, $params);
   }
-  
+
   public function post($url, $data = null, $params = null) {
-    return $this->execute(self::POST, $url, $data , $params);    
+    return $this->execute(self::POST, $url, $data , $params);
   }
-  
+
   public function put($url, $data = null, $params = null) {
-    return $this->execute(self::PUT, $url, $data , $params);    
+    return $this->execute(self::PUT, $url, $data , $params);
   }
-  
+
   public function delete($url, $data = null, $params = null) {
-    return $this->execute(self::DELETE, $url, $data , $params);    
+    return $this->execute(self::DELETE, $url, $data , $params);
   }
-  
+
   public function head($url, $data = null, $params = null) {
-    return $this->execute(self::HEAD, $url, $data , $params);    
+    return $this->execute(self::HEAD, $url, $data , $params);
   }
 
   /**
@@ -108,14 +115,14 @@ class Requester {
   public function save($storePath, $url, $data = null, $params = null, $method = self::GET) {
     $fileContent = $this->execute($method, $url, $data, $params);
     $fp = fopen($storePath,'w');
-    if ($fp !== false) {
+    if ($fp !== FALSE) {
       $writeStatus = fwrite($fp, $fileContent);
-      if ($writeStatus !== false) {
+      if ($writeStatus !== FALSE) {
         fclose($fp);
-        return true;
+        return TRUE;
       }
     }
-    return false;
+    return FALSE;
   }
 
   /**
@@ -125,10 +132,14 @@ class Requester {
    * @return boolean : True on Success False on Fail
    */
   public function ping($url) {
-     if ($this->execute(self::HEAD, $url) !== false) {
-       return true;
-     }
-     return false;
+    try {
+      if ($this->execute(self::HEAD, $url) !== FALSE) {
+        return TRUE;
+      }
+    } catch(Exception $e) {
+      return FALSE;
+    }
+    return FALSE;
   }
 
   /**
@@ -155,8 +166,8 @@ class Requester {
    *      )
    * @return Requester
    */
-  public function setOptionProxy($proxy = false) {
-    if ($proxy !== false) {
+  public function setOptionProxy($proxy = FALSE) {
+    if ($proxy !== FALSE) {
       $this->options[CURLOPT_PROXY] = $proxy['url'];
       if (isset($proxy['auth'])) {
         $this->options[CURLOPT_PROXYAUTH] = CURLAUTH_BASIC;
@@ -191,12 +202,12 @@ class Requester {
    * @return Requester
    */
   public function setOptionAllowRedirect($max_redirects = 3) {
-    if($max_redirects == false || $max_redirects == 0) {
-      $this->options[CURLOPT_FOLLOWLOCATION] = false;
+    if($max_redirects == FALSE || $max_redirects == 0) {
+      $this->options[CURLOPT_FOLLOWLOCATION] = FALSE;
       $this->options[CURLOPT_MAXREDIRS] = 0;
       return $this;
     }
-    $this->options[CURLOPT_FOLLOWLOCATION] = true;
+    $this->options[CURLOPT_FOLLOWLOCATION] = TRUE;
     $this->options[CURLOPT_MAXREDIRS] = $max_redirects;
     return $this;
   }
@@ -209,9 +220,9 @@ class Requester {
    * @return Requester
    */
   public function setOptionSsl($sslCa) {
-    $this->options[CURLOPT_SSL_VERIFYPEER] = false;
+    $this->options[CURLOPT_SSL_VERIFYPEER] = FALSE;
     if ($sslCa !== '') {
-      $this->options[CURLOPT_SSL_VERIFYPEER] = true;
+      $this->options[CURLOPT_SSL_VERIFYPEER] = TRUE;
       $this->options[CURLOPT_SSL_VERIFYHOST] =  2;
       $this->options[CURLOPT_CAINFO] = $sslCa;
 
@@ -298,6 +309,7 @@ class Requester {
    */
   protected function setOptionMethod($method = self::GET) {
     $this->options[CURLOPT_HEADER] = FALSE;
+    $this->options[CURLOPT_NOBODY] = FALSE;
     $this->method = $method;
     switch ($this->method) {
       case self::GET:
@@ -315,13 +327,13 @@ class Requester {
     }
     return $this;
   }
-  
+
   public function setOptionResponseType($type = self::RESPONSE_RAW) {
     $this->responseType = $type;
     if($type === self::RESPONSE_ARRAY) {
-      $this->options[CURLOPT_HEADER] = true;
+      $this->options[CURLOPT_HEADER] = TRUE;
     } else {
-      $this->options[CURLOPT_HEADER] = false;
+      $this->options[CURLOPT_HEADER] = FALSE;
     }
   }
 
@@ -365,21 +377,21 @@ class Requester {
     if (isset($options['encoding'])) {
       $this->setOptionEncoding($options['encoding']);
     }
-    
+
     $this->setOptionResponseType(self::RESPONSE_RAW);
     if(isset($options['response_type']) && $options['response_type'] === self::RESPONSE_ARRAY) {
       $this->setOptionResponseType(self::RESPONSE_ARRAY);
     }
   }
-  
+
   /**
    * Parses a raw HTTP Response Header and convert it to an array.
    * @param String $headers
-   * @return Array : The Parsed Headers 
+   * @return Array : The Parsed Headers
    */
   static function parseHttpHeader($headers) {
     $headerdata = array();
-    if ($headers === false){
+    if ($headers === FALSE){
       return $headerdata;
     }
     $headers_lines = str_replace("\r","", $headers);
@@ -394,12 +406,12 @@ class Requester {
     }
     return $headerdata;
   }
-  
+
   /**
-   * Creates a Response Array 
-   * 
+   * Creates a Response Array
+   *
    * @param String $content  : Raw Response (Headers and Body)
-   * @param Array $info : Curl Meta Info    
+   * @param Array $info : Curl Meta Info
    */
   static function createArrayResponse($content, $info = array()) {
     $response = array();
@@ -408,7 +420,7 @@ class Requester {
     }
     $response['raw_header'] = trim(substr($content, 0, $info['header_size']));
     $response['headers'] = self::parseHttpHeader($response['raw_header']);
-    $response['content'] = substr($content, -$info['download_content_length']); 
+    $response['content'] = substr($content, -$info['download_content_length']);
     $response['allow'] = array();
     if (isset($response['headers']['Allow'])) {
       $response['allow'] = explode(', ', $response['headers']['Allow']);
