@@ -82,22 +82,66 @@ class Requester {
     return $result;
   }
 
+  /**
+   * Executes a Get Request
+   *
+   * @param String       $url
+   * @param Array|String $params
+   * @return String
+   * @throw Exception
+   */
   public function get($url, $params = null) {
     return $this->execute(self::GET, $url, null, $params);
   }
 
+  /**
+   * Executes a Post Request
+   *
+   * @param String       $url
+   * @param Array|String $data   : Data to add in the body of the Request
+   * @param Array|String $params : Parameters to include at the Url, ?arg1=1&arg2=2....
+   * @return String
+   * @throw Exception
+   */
   public function post($url, $data = null, $params = null) {
     return $this->execute(self::POST, $url, $data , $params);
   }
 
+  /**
+   * Executes a Put Request
+   *
+   * @param String       $url
+   * @param Array|String $data   : Data to add in the body of the Request
+   * @param Array|String $params : Parameters to include at the Url, ?arg1=1&arg2=2....
+   * @return String
+   * @throw Exception
+   */
   public function put($url, $data = null, $params = null) {
     return $this->execute(self::PUT, $url, $data , $params);
   }
 
+  /**
+   * Executes a Delete Request
+   *
+   * @param String       $url
+   * @param Array|String $data   : Data to add in the body of the Request
+   * @param Array|String $params : Parameters to include at the Url, ?arg1=1&arg2=2....
+   * @return String
+   * @throw Exception
+   */
   public function delete($url, $data = null, $params = null) {
     return $this->execute(self::DELETE, $url, $data , $params);
   }
 
+  /**
+   * Executes a Head Request
+   *
+   * @param String       $url
+   * @param Array|String $data   : Data to add in the body of the Request
+   * @param Array|String $params : Parameters to include at the Url, ?arg1=1&arg2=2....
+   * @return String
+   * @throw Exception
+   */
   public function head($url, $data = null, $params = null) {
     return $this->execute(self::HEAD, $url, $data , $params);
   }
