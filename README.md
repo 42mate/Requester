@@ -155,6 +155,38 @@ $response = $requester->get('http://www.google.com', array('q' => 'php'));
 
 All this request will be executed with the same parameters for proxy and timeout.
 
+##Checking the Status Code of the Response
+
+If you need check the status code of the response you can use the method getLastHttpCode. This
+method will return the status code of the last request.
+
+
+``` php
+
+$requester = new Requester();
+$response = $requester->get('http://www.google.com');
+$responseStatusCode = $requester->getLastHttpCode();
+
+```
+
+## Response as Array
+
+If you need the response metadata information (headers, times, status). You can
+set the option Response Type (setOptionResponseType) to an Array, with this option
+Requester will return an array with the content and more information of the request.
+
+``` php
+
+$requester = new Requester();
+$requester->setOptionResponseType(Requester::RESPONSE_ARRAY);
+$response = $requester->get('http://www.google.com');
+echo $response['content'];
+echo $response['status_code'];
+echo $response['http_code'];
+//And more options. 
+
+```
+
 ## Supported methods.
 
  - GET
