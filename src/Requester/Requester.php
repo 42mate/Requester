@@ -33,7 +33,6 @@ class Requester {
   protected $url = '';
   protected $method = self::GET;
   protected $options = array();
-  
   protected $responseType = self::RESPONSE_RAW;
 
   /**
