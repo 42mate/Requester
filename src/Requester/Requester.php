@@ -21,19 +21,22 @@ class Requester {
   const RESPONSE_RAW     = 'raw';
   const RESPONSE_ARRAY   = 'array';
 
-  static protected $default_options =  array(
+  static protected $default_options = array(
       CURLOPT_FRESH_CONNECT => TRUE,
       CURLOPT_RETURNTRANSFER => TRUE,
       CURLINFO_HEADER_OUT => TRUE,
       CURLOPT_SSL_VERIFYPEER => FALSE,
       CURLOPT_FOLLOWLOCATION => TRUE,
       CURLOPT_MAXREDIRS => 3,
+      CURLOPT_FAILONERROR => FALSE,
+      CURLOPT_HEADER => FALSE,
   );
 
   protected $url = '';
   protected $method = self::GET;
   protected $responseType = self::RESPONSE_RAW;
   protected $options = array();
+  protected $lastHttpCode = 0;
 
   /**
    * Creates a Request Object
@@ -54,7 +57,10 @@ class Requester {
    * @param Array  $data    : The Data to append in the body
    * @param Array  $params  : The Parameters to append as a Query String
    *
-   * @return String|Boolean : The content or false on failure
+   * @return String|Array|Boolean : The content or false on failure
+   * 
+   * @throws Exception
+   * 
    */
   public function execute($method, $url, $data = null, $params = null) {
     $this->setOptionUrl($url);
@@ -70,14 +76,12 @@ class Requester {
       throw new Exception(curl_error($ch), curl_errno($ch));
     }
 
-    if ($info['http_code'] >= 400) {
-      throw new Exception('Response Code: ' . $info['http_code']);
-    }
-
     if ($this->responseType === self::RESPONSE_ARRAY) {
       $result = self::createArrayResponse($result, $info);
     }
-
+    
+    $this->lastHttpCode = $info['http_code'];
+    
     curl_close($ch);
     return $result;
   }
@@ -87,7 +91,9 @@ class Requester {
    *
    * @param String       $url
    * @param Array|String $params
+   * 
    * @return String
+   * 
    * @throw Exception
    */
   public function get($url, $params = null) {
@@ -100,7 +106,9 @@ class Requester {
    * @param String       $url
    * @param Array|String $data   : Data to add in the body of the Request
    * @param Array|String $params : Parameters to include at the Url, ?arg1=1&arg2=2....
+   * 
    * @return String
+   * 
    * @throw Exception
    */
   public function post($url, $data = null, $params = null) {
@@ -113,7 +121,9 @@ class Requester {
    * @param String       $url
    * @param Array|String $data   : Data to add in the body of the Request
    * @param Array|String $params : Parameters to include at the Url, ?arg1=1&arg2=2....
+   * 
    * @return String
+   * 
    * @throw Exception
    */
   public function put($url, $data = null, $params = null) {
@@ -126,7 +136,9 @@ class Requester {
    * @param String       $url
    * @param Array|String $data   : Data to add in the body of the Request
    * @param Array|String $params : Parameters to include at the Url, ?arg1=1&arg2=2....
+   * 
    * @return String
+   * 
    * @throw Exception
    */
   public function delete($url, $data = null, $params = null) {
@@ -139,7 +151,9 @@ class Requester {
    * @param String       $url
    * @param Array|String $data   : Data to add in the body of the Request
    * @param Array|String $params : Parameters to include at the Url, ?arg1=1&arg2=2....
+   * 
    * @return String
+   * 
    * @throw Exception
    */
   public function head($url, $data = null, $params = null) {
@@ -307,7 +321,6 @@ class Requester {
    * @return Requester
    */
   protected function setOptionUrl($url) {
-    $this->url = $url;
     $this->options[CURLOPT_URL] = $url;
     return $this;
   }
@@ -321,9 +334,8 @@ class Requester {
    */
   protected function setOptionParams($params) {
     if(!empty($params)) {
-      $this->params = $this->buildQuery($params);
-      $this->url .= '?' . $this->params;
-      $this->setOptionUrl($this->url);
+      $query_params = $this->buildQuery($params);
+      $this->options[CURLOPT_URL] .= '?' . $query_params;
     }
     return $this;
   }
@@ -352,7 +364,6 @@ class Requester {
    * @return Requester
    */
   protected function setOptionMethod($method = self::GET) {
-    $this->options[CURLOPT_HEADER] = FALSE;
     $this->options[CURLOPT_NOBODY] = FALSE;
     $this->method = $method;
     switch ($this->method) {
@@ -372,6 +383,14 @@ class Requester {
     return $this;
   }
 
+  /**
+   * This options allows set the response type. By default will return a string
+   * with the content. But if you need more info, you can set the response to an
+   * array and get a complete information of the request.
+   * 
+   * @param String $type RESPONSE_RAW | RESPONSE_ARRAY
+   *
+   */
   public function setOptionResponseType($type = self::RESPONSE_RAW) {
     $this->responseType = $type;
     if($type === self::RESPONSE_ARRAY) {
@@ -379,6 +398,18 @@ class Requester {
     } else {
       $this->options[CURLOPT_HEADER] = FALSE;
     }
+    return $this;
+  }
+  
+  /**
+   * Set this option to throw an Exception if the response status code is
+   * grater or equal than 400. By dafault is false.
+   * 
+   * @param boolean $fail
+   */
+  public function setOptionFailOnError($fail = FALSE) {
+    $this->options[CURLOPT_FAILONERROR] = $fail;
+    return $this;
   }
 
   /**
@@ -422,15 +453,21 @@ class Requester {
       $this->setOptionEncoding($options['encoding']);
     }
 
-    $this->setOptionResponseType(self::RESPONSE_RAW);
     if(isset($options['response_type']) && $options['response_type'] === self::RESPONSE_ARRAY) {
       $this->setOptionResponseType(self::RESPONSE_ARRAY);
     }
+    
+    if (isset($options['fail_on_error'])) {
+      $this->setOptionFailOnError($options['fail_on_error']);
+    }
+    return $this;
   }
 
   /**
    * Parses a raw HTTP Response Header and convert it to an array.
+   * 
    * @param String $headers
+   * 
    * @return Array : The Parsed Headers
    */
   static function parseHttpHeader($headers) {
@@ -455,6 +492,7 @@ class Requester {
    * Creates a Response Array
    *
    * @param String $content  : Raw Response (Headers and Body)
+   * 
    * @param Array $info : Curl Meta Info
    */
   static function createArrayResponse($content, $info = array()) {
@@ -464,11 +502,23 @@ class Requester {
     }
     $response['raw_header'] = trim(substr($content, 0, $info['header_size']));
     $response['headers'] = self::parseHttpHeader($response['raw_header']);
-    $response['content'] = substr($content, -$info['download_content_length']);
+    $response['content'] = substr($content, $info['header_size']);
     $response['allow'] = array();
     if (isset($response['headers']['Allow'])) {
       $response['allow'] = explode(', ', $response['headers']['Allow']);
     }
+    return $response;
+  }
+  
+  /**
+   * Returns the HTTP code of the last Request.
+   * 
+   * If any request was made before, this method will return 0
+   * 
+   * @return integer 
+   */
+  public function getLastHttpCode() {
+    return $this->lastHttpCode;
   }
 
 }
