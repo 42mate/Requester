@@ -88,7 +88,7 @@ class BasicTest extends PHPUnit_Framework_TestCase
   public function testPing() {
     $request = new Requester();
     $this->assertTrue($request->ping('http://www.google.com'), 'Fail pingin Google');
-    $this->assertEquals(false, $request->ping('http://127.0.0.1:999999999/'), 'Should fail, you sholdnt have a WebServer in the http://127.0.0.1:999999999/ url');
+    $this->assertEquals(false, $request->ping('http://127.0.0.1:9999/'), 'Should fail, you sholdnt have a WebServer in the http://127.0.0.1:999999999/ url');
   }
 
   public function testHttps() {
