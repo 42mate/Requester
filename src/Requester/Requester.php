@@ -245,10 +245,7 @@ class Requester {
    * @return Requester
    */
   public function setOptionTimeOut($timeOut = 30) {
-    $this->options[CURLOPT_TIMEOUT] = 30;
-    if (isset($timeOut)) {
-      $this->options[CURLOPT_TIMEOUT] = $timeOut;
-    }
+    $this->options[CURLOPT_TIMEOUT] = $timeOut;
     return $this;
   }
 
