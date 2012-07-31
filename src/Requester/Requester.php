@@ -345,7 +345,8 @@ class Requester {
    */
   protected function setOptionData($data) {
     if (!empty($data)) {
-      if (is_array($data)) {
+      if ($this->method === self::DELETE && is_array($data)) {
+        //DELETE needs the post data as string.
         $data = $this->buildQuery($data);
       }
       $this->options[CURLOPT_POSTFIELDS] = $data;
