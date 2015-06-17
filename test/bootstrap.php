@@ -8,8 +8,8 @@ $proxy = array(
 );
 
 $proxy_ntlm = array(
-    'url' => 'http://proxy.inet.corp.nyse.com:8080',
-    'auth' => 'acasiva:maron357Fo',
+    'url' => 'http://proxy.inet.corp.company.com:8080',
+    'auth' => 'user:pass',
     'auth_method' => 'NTLM',
 );
 
@@ -19,3 +19,4 @@ $proxy_basic = array(
 );
 
 define('BASE_URL', 'http://httpbin.org');
+define('TEST_PROXY', false);

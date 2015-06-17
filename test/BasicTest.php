@@ -67,7 +67,7 @@ class BasicTest extends PHPUnit_Framework_TestCase
             array('arg1' => 'test', 'arg2' => 2), 'id=1'));
     $this->assertNotEquals(false, $response, 'Result is false');
     $this->assertEquals('1', $response->args->id);
-    $this->assertEquals('arg1=test&arg2=2', $response->data);
+    $this->assertEquals('', $response->data);
   }
 
   public function testSimpleHead() {
